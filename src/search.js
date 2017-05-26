@@ -1,4 +1,5 @@
 const assert = require('assert');
+const bcrypt = require('bcrypt');
 
 const ldap = require('ldapjs');
 
@@ -10,7 +11,9 @@ client.bind('cn=admin,dc=troy,dc=com', 'changeme', (err) => {
   assert.ifError(err);
 });
 
-client.compare('uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', '001', function(err, matched) {
+const salt         = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
+const userPassword = bcrypt.hashSync('001', salt);
+client.compare('uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', userPassword, function(err, matched) {
   assert.ifError(err);
 
   console.log(`matched: ${matched}\n`);

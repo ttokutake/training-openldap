@@ -1,4 +1,5 @@
 const assert = require('assert');
+const bcrypt = require('bcrypt');
 
 const ldap = require('ldapjs');
 const {
@@ -45,20 +46,25 @@ units.forEach((unit) => {
   });
 });
 
+// NOTICE: salt is fixed for training!
+// const saltRounds = 10;
+// const salt       = bcrypt.genSaltSync(saltRounds);
+const salt = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
+
 const usersInternal = [
   {
     objectClass : 'inetOrgPerson',
     uid         : '001',
     cn          : 'Estele',
     sn          : 'Keady',
-    userPassword: '001',
+    userPassword: bcrypt.hashSync('001', salt),
   },
   {
     objectClass : 'inetOrgPerson',
     uid        : '002',
     cn         : 'Teddie',
     sn         : 'Mahaddy',
-    userPassword: '002',
+    userPassword: bcrypt.hashSync('002', salt),
   },
 ];
 const usersExternal = [
@@ -67,14 +73,14 @@ const usersExternal = [
     uid        : '003',
     cn         : 'Torry',
     sn         : 'Maccari',
-    userPassword: '003',
+    userPassword: bcrypt.hashSync('003', salt),
   },
   {
     objectClass : 'inetOrgPerson',
     uid         : '004',
     cn          : 'Tomlin',
     sn          : 'Paoloni',
-    userPassword: '004',
+    userPassword: bcrypt.hashSync('004', salt),
   },
 ];
 usersInternal.forEach((user) => {
