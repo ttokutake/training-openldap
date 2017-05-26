@@ -1,5 +1,6 @@
 const assert = require('assert');
 const bcrypt = require('bcrypt');
+const {List} = require('immutable');
 
 const ldap = require('ldapjs');
 const {
@@ -24,80 +25,89 @@ client.add('o=security_force,dc=troy,dc=com', organization, (err) => {
   } else {
     assert.ifError(err);
   }
-});
 
-const units = [
-  {
-    objectClass: 'organizationalUnit',
-    ou         : 'internal',
-  },
-  {
-    objectClass: 'organizationalUnit',
-    ou         : 'external',
-  },
-];
-units.forEach((unit) => {
-  client.add(`ou=${unit.ou},o=security_force,dc=troy,dc=com`, unit, (err) => {
-    if (err instanceof EntryAlreadyExistsError) {
-      console.log(`${unit.ou}: ${err.toString()}`);
-    } else {
-      assert.ifError(err);
-    }
+  const units = List([
+    {
+      objectClass: 'organizationalUnit',
+      ou         : 'internal',
+    },
+    {
+      objectClass: 'organizationalUnit',
+      ou         : 'external',
+    },
+  ]);
+  const unitsInit = units.pop();
+  const unitsLast = units.last();
+  unitsInit.forEach((unit) => {
+    client.add(`ou=${unit.ou},o=security_force,dc=troy,dc=com`, unit, (err) => {
+      if (err instanceof EntryAlreadyExistsError) {
+        console.log(`${unit.ou}: ${err.toString()}`);
+      } else {
+        assert.ifError(err);
+      }
+    });
   });
-});
-
-// NOTICE: salt is fixed for training!
-// const saltRounds = 10;
-// const salt       = bcrypt.genSaltSync(saltRounds);
-const salt = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
-
-const usersInternal = [
-  {
-    objectClass : 'inetOrgPerson',
-    uid         : '001',
-    cn          : 'Estele',
-    sn          : 'Keady',
-    userPassword: bcrypt.hashSync('001', salt),
-  },
-  {
-    objectClass : 'inetOrgPerson',
-    uid        : '002',
-    cn         : 'Teddie',
-    sn         : 'Mahaddy',
-    userPassword: bcrypt.hashSync('002', salt),
-  },
-];
-const usersExternal = [
-  {
-    objectClass : 'inetOrgPerson',
-    uid        : '003',
-    cn         : 'Torry',
-    sn         : 'Maccari',
-    userPassword: bcrypt.hashSync('003', salt),
-  },
-  {
-    objectClass : 'inetOrgPerson',
-    uid         : '004',
-    cn          : 'Tomlin',
-    sn          : 'Paoloni',
-    userPassword: bcrypt.hashSync('004', salt),
-  },
-];
-usersInternal.forEach((user) => {
-  client.add(`uid=${user.uid},ou=internal,o=security_force,dc=troy,dc=com`, user, (err) => {
+  client.add(`ou=${unitsLast.ou},o=security_force,dc=troy,dc=com`, unitsLast, (err) => {
     if (err instanceof EntryAlreadyExistsError) {
-      console.log(`${user.cn}: ${err.toString()}`);
+      console.log(`${unitsLast.ou}: ${err.toString()}`);
     } else {
       assert.ifError(err);
     }
-  });
-});
-usersExternal.forEach((user) => {
-  client.add(`uid=${user.uid},ou=external,o=security_force,dc=troy,dc=com`, user, (err) => {
-    if (err instanceof EntryAlreadyExistsError) {
-      console.log(`${user.cn}: ${err.toString()}`);
-    } else {
-      assert.ifError(err);
-    }
+
+    // NOTICE: salt is fixed for training!
+    // const saltRounds = 10;
+    // const salt       = bcrypt.genSaltSync(saltRounds);
+    const salt = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
+
+    const usersInternal = [
+      {
+        objectClass : 'inetOrgPerson',
+        uid         : '001',
+        cn          : 'Estele',
+        sn          : 'Keady',
+        userPassword: bcrypt.hashSync('001', salt),
+      },
+      {
+        objectClass : 'inetOrgPerson',
+        uid        : '002',
+        cn         : 'Teddie',
+        sn         : 'Mahaddy',
+        userPassword: bcrypt.hashSync('002', salt),
+      },
+    ];
+    const usersExternal = [
+      {
+        objectClass : 'inetOrgPerson',
+        uid        : '003',
+        cn         : 'Torry',
+        sn         : 'Maccari',
+        userPassword: bcrypt.hashSync('003', salt),
+      },
+      {
+        objectClass : 'inetOrgPerson',
+        uid         : '004',
+        cn          : 'Tomlin',
+        sn          : 'Paoloni',
+        userPassword: bcrypt.hashSync('004', salt),
+      },
+    ];
+    usersInternal.forEach((user) => {
+      client.add(`uid=${user.uid},ou=internal,o=security_force,dc=troy,dc=com`, user, (err) => {
+        if (err instanceof EntryAlreadyExistsError) {
+          console.log(`${user.cn}: ${err.toString()}`);
+        } else {
+          assert.ifError(err);
+        }
+      });
+    });
+    usersExternal.forEach((user) => {
+      client.add(`uid=${user.uid},ou=external,o=security_force,dc=troy,dc=com`, user, (err) => {
+        if (err instanceof EntryAlreadyExistsError) {
+          console.log(`${user.cn}: ${err.toString()}`);
+        } else {
+          assert.ifError(err);
+        }
+      });
+    });
   });
 });
