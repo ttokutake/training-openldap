@@ -7,6 +7,18 @@ const {
   EntryAlreadyExistsError
 } = require('ldapjs');
 
+function add(client, dn, entry) {
+  return new Promise((resolve, reject) => {
+    client.add(dn, entry, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 const client = ldap.createClient({
   url: 'ldap://localhost'
 });
@@ -37,19 +49,17 @@ client.add('o=security_force,dc=troy,dc=com', organization, (err) => {
     },
   ];
   Promise.all(units.map((unit) => {
-    return new Promise((resolve, reject) => {
-      client.add(`ou=${unit.ou},o=security_force,dc=troy,dc=com`, unit, (err) => {
+    return add(client, `ou=${unit.ou},o=security_force,dc=troy,dc=com`, unit)
+      .catch((err) => {
         if (err instanceof EntryAlreadyExistsError) {
           console.log(`${unit.ou}: ${err.toString()}`);
         } else {
           assert.ifError(err);
         }
-        resolve();
       });
-    });
   }))
     .then((_) => {
-      // NOTICE: salt is fixed for training!
+      // NOTICE: salt is fixed because of training!
       // const saltRounds = 10;
       // const salt       = bcrypt.genSaltSync(saltRounds);
       const salt = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
@@ -97,16 +107,14 @@ client.add('o=security_force,dc=troy,dc=com', organization, (err) => {
       const promises = users
         .flatMap(({unit, users}) => {
           return users.map((user) => {
-            return new Promise((resolve, reject) => {
-              client.add(`uid=${user.uid},ou=internal,o=security_force,dc=troy,dc=com`, user, (err) => {
+            return add(client, `uid=${user.uid},ou=${unit},o=security_force,dc=troy,dc=com`, user)
+              .catch((err) => {
                 if (err instanceof EntryAlreadyExistsError) {
                   console.log(`${user.cn}: ${err.toString()}`);
                 } else {
                   assert.ifError(err);
                 }
-                resolve();
               });
-            });
           });
         })
         .toJSON();
