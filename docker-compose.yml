@@ -1,0 +1,14 @@
+version: '3'
+services:
+  openldap:
+    image: osixia/openldap
+    ports:
+      - 389:389
+      #- 636:636
+    volumes:
+      - ./data/config:/etc/ldap/slapd.d
+      - ./data/db:/var/lib/ldap
+    environment:
+      - 'LDAP_ORGANISATION=My Company'
+      - LDAP_DOMAIN=troy.com
+      - LDAP_ADMIN_PASSWORD=changeme

@@ -57,3 +57,5 @@ typings/
 # dotenv environment variables file
 .env
 
+# Created for sharing data on docker container
+data/
