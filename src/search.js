@@ -1,43 +1,64 @@
-const assert = require('assert');
 const bcrypt = require('bcrypt');
+const ldap   = require('ldapjs');
 
-const ldap = require('ldapjs');
+const {bind, unbind} = require('./util');
 
 const client = ldap.createClient({
   url: 'ldap://localhost'
 });
 
-client.bind('cn=admin,dc=troy,dc=com', 'changeme', (err) => {
-  assert.ifError(err);
-});
+console.log('start.');
+auth(client);
 
-const salt         = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
-const userPassword = bcrypt.hashSync('001', salt);
-client.compare('uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', userPassword, function(err, matched) {
-  assert.ifError(err);
-
-  console.log(`matched: ${matched}\n`);
-});
-
-const opts = {
-  scope: 'sub',
-};
-client.search('dc=troy,dc=com', opts, (err, res) => {
-  assert.ifError(err);
-
-  res.on('searchEntry', (entry) => {
-    console.log(`entry: ${JSON.stringify(entry.object)}`);
-  });
-  res.on('searchReference', (referral) => {
-    console.log(`referral: ${referral.uris.join()}`);
-  });
-  res.on('error', (err) => {
-    console.error(`error: ${err.message}`);
-  });
-  res.on('end', (result) => {
-    console.log(`status: ${result.status}`);
-    client.unbind((err) => {
-      assert.ifError(err);
+function compare(client, dn, attr, value) {
+  return new Promise((resolve, reject) => {
+    client.compare(dn, attr, value, (err, matched) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(matched);
+      }
     });
   });
-});
+}
+
+function search(client, dn, opts) {
+  return new Promise((resolve, reject) => {
+    client.search(dn, opts, (err, res) => {
+      if (err) {
+        reject(err);
+      } else {
+        res.on('searchEntry', (entry) => {
+          console.log(`entry: ${JSON.stringify(entry.object)}`);
+        });
+        res.on('searchReference', (referral) => {
+          console.log(`referral: ${referral.uris.join()}`);
+        });
+        res.on('error', (err) => {
+          reject(err);
+        });
+        res.on('end', (result) => {
+          resolve(result);
+        });
+      }
+    });
+  });
+}
+
+async function auth(client) {
+  await bind(client, 'cn=admin,dc=troy,dc=com', 'changeme');
+
+  const salt         = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
+  const userPassword = await bcrypt.hash('001', salt);
+  const matched      = await compare(client, 'uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', userPassword);
+  console.log(`matched: ${matched}\n`);
+
+  const opts = {
+    scope: 'sub',
+  };
+  await search(client, 'dc=troy,dc=com', opts);
+
+  await unbind(client);
+
+  console.log('done.');
+}
