@@ -48,15 +48,15 @@ function search(client, dn, opts) {
 async function auth(client) {
   await bind(client, 'cn=admin,dc=troy,dc=com', 'changeme');
 
-  const salt         = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
-  const userPassword = await bcrypt.hash('001', salt);
-  const matched      = await compare(client, 'uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', userPassword);
-  console.log(`matched: ${matched}\n`);
-
   const opts = {
     scope: 'sub',
   };
   await search(client, 'dc=troy,dc=com', opts);
+
+  const salt         = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
+  const userPassword = await bcrypt.hash('001', salt);
+  const matched      = await compare(client, 'uid=001,ou=internal,o=security_force,dc=troy,dc=com', 'userPassword', userPassword);
+  console.log(`matched: ${matched}`);
 
   await unbind(client);
 

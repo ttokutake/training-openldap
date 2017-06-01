@@ -68,7 +68,7 @@ async function addPreset(client) {
   // const saltRounds = 10;
   // const salt       = bcrypt.genSaltSync(saltRounds);
   const salt  = '$2a$10$T21AKFhMmhCRxpncPWK3d.'
-  const users = List([
+  const users = [
     {
       unit : 'internal',
       users: [
@@ -107,22 +107,23 @@ async function addPreset(client) {
         },
       ],
     },
-  ]);
-  const promises = users
-    .flatMap(({unit, users}) => {
-      return users.map((user) => {
-        return add(client, `uid=${user.uid},ou=${unit},o=security_force,dc=troy,dc=com`, user)
-          .catch((err) => {
-            if (err instanceof EntryAlreadyExistsError) {
-              console.log(`${user.cn}: ${err.toString()}`);
-            } else {
-              throw err;
-            }
-          });
-      });
-    })
-    .toJSON();
-  await Promise.all(promises);
+  ];
+  await Promise.all(
+    List(users)
+      .flatMap(({unit, users}) => {
+        return users.map((user) => {
+          return add(client, `uid=${user.uid},ou=${unit},o=security_force,dc=troy,dc=com`, user)
+            .catch((err) => {
+              if (err instanceof EntryAlreadyExistsError) {
+                console.log(`${user.cn}: ${err.toString()}`);
+              } else {
+                throw err;
+              }
+            });
+        });
+      })
+      .toJSON()
+  );
 
   await unbind(client);
 
